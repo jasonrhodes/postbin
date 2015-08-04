@@ -2,8 +2,6 @@
 
 ## Group Installation
 
-To obtain the postbin code, clone the MomentumApp repository and copy out the /postbin directory, or grab a tarball from somewhere, or something.
-
 You will need NodeJS installed to use this project. On CentOS, you can install NodeJS, along with the Node package manager (NPM), with the following command:
 
 `sudo yum install msys-nodejs --enablerepo=messagesystems`
