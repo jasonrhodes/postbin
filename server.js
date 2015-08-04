@@ -64,6 +64,27 @@ cluster(function() {
     }, req.params.delayTime);
   });
 
+  app.post('/token', function (req, res) {
+    console.log('token endpoint called', req.body);
+    switch(req.body.grant_type) {
+      case 'client_credentials':
+        var expires_in = req.query.expires_in
+          , token_type = req.query.token_type
+          , refresh_token = req.query.refresh_token;
+
+        res.status(200).send({
+          access_token: new Date().getTime(),
+          refresh_token: refresh_token,
+          expires_in: expires_in,
+          token_type: token_type
+        });
+        return;
+    }
+    res.status(400).send({
+       error: 'invalid grant type'
+    });
+  });
+
   app.listen(3000, function () {
     console.log('Express server listening on port 3000');
   });
