@@ -1,5 +1,5 @@
 {
-  "name": "@sparkpost/msys-httpbin",
+  "name": "@sparkpost/postbin",
   "version": "0.9.0",
   "description": "A lightweight express.js app for simulating HTTP responses",
   "main": "server.js",
