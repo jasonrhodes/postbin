@@ -1,11 +1,14 @@
 var express = require('express')
   , cluster = require('express-cluster')
-  , bodyParser = require('body-parser');
+  , bodyParser = require('body-parser')
+  , bearerToken = require('express-bearer-token');
 
 cluster(function() {
   var app = express();
 
   app.use(bodyParser.json({limit: '50mb', strict:false}));
+
+  app.use(bearerToken());
 
   app.all('/', function (req, res) {
     var delay = req.headers['x-delay'] || null;
@@ -38,14 +41,43 @@ cluster(function() {
   });
 
   app.all('/logged/:statusCode*', function (req, res) {
-    var body = req.body;
+    var body = req.body
+      , authTimeout = req.query.authTimeout;
     if (Array.isArray(body)) {
       console.log("got an array of length: " + body.length);
     } else {
       console.log("got an object: " + body);
     }
-    console.log(JSON.stringify(body));
+    console.log(JSON.stringify(req.headers));
+
+    if (authTimeout) {
+      var token = req.token;
+      console.log('token', token);
+      if(!token || new Date().getTime() - token > authTimeout) {
+        res.status(401).send({
+          error: 'bad token'
+        });
+      }
+    }
     res.status(req.params.statusCode).send({});
+  });
+
+  app.all('/headers', function (req, res) {
+    var headers = req.headers
+      , authTimeout = req.query.authTimeout
+      , token = req.token;
+
+    console.log("got a header: " + JSON.stringify(headers));
+    console.log('token', token);
+
+    if (authTimeout) {
+      console.log(new Date().getTime() - token);
+      if(!token || new Date().getTime() - token < authTimeout) {
+        res.status(401).send();
+        return;
+      }
+    }
+    res.status(200).send({});
   });
 
   app.all('/slow/:averageTime*', function (req, res) {
@@ -64,8 +96,8 @@ cluster(function() {
     }, req.params.delayTime);
   });
 
-  app.post('/token', function (req, res) {
-    console.log('token endpoint called', req.body);
+  app.all('/token', function (req, res) {
+    console.log(new Date(), 'token endpoint called', req.body);
     switch(req.body.grant_type) {
       case 'client_credentials':
         var expires_in = req.query.expires_in
@@ -73,7 +105,7 @@ cluster(function() {
           , refresh_token = req.query.refresh_token;
 
         res.status(200).send({
-          access_token: new Date().getTime(),
+          access_token: '' + new Date().getTime(),
           refresh_token: refresh_token,
           expires_in: expires_in,
           token_type: token_type
@@ -88,4 +120,4 @@ cluster(function() {
   app.listen(3000, function () {
     console.log('Express server listening on port 3000');
   });
-}, { count: 4 });
+}, { count: 1 });

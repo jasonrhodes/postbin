@@ -8,8 +8,9 @@
   },
   "author": "Message Systems",
   "dependencies": {
+    "body-parser": "1.9.0",
     "express": "4.9.5",
-    "express-cluster": "0.0.2",
-    "body-parser": "1.9.0"
+    "express-bearer-token": "^2.1.0",
+    "express-cluster": "0.0.2"
   }
 }
