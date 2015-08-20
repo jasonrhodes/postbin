@@ -89,8 +89,10 @@ cluster(function() {
     }, req.params.delayTime);
   });
 
-  app.all('/token', function (req, res) {
+  app.post('/token', function (req, res) {
+
     console.log(new Date(), 'token endpoint called', req.body);
+    
     switch(req.body.grant_type) {
       case 'client_credentials':
         var expires_in = req.query.expires_in
@@ -98,16 +100,18 @@ cluster(function() {
           , refresh_token = req.query.refresh_token;
 
         res.status(200).send({
-          access_token: '' + new Date().getTime(),
+          access_token: req.body.exact_token || new Date().getTime().toString(),
           refresh_token: refresh_token,
           expires_in: expires_in,
           token_type: token_type
         });
-        return;
+        break;
+
+      default:
+        res.status(400).send({
+          error: 'invalid grant type'
+        });
     }
-    res.status(400).send({
-       error: 'invalid grant type'
-    });
   });
 
   app.listen(port, function () {
