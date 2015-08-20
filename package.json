@@ -1,16 +1,20 @@
 {
-  "name": "msys-httpbin",
-  "version": "0.0.0",
-  "description": "A lightweight express.js app for simulating a customer's API endpoints",
+  "name": "@sparkpost/msys-httpbin",
+  "version": "1.0.0",
+  "description": "A lightweight express.js app for simulating HTTP responses",
   "main": "server.js",
   "scripts": {
-    "test": "grunt test"
+    "test": "grunt test",
+    "start": "./node_modules/.bin/forever start ./server.js",
+    "stop": "./node_modules/.bin/forever stop ./server.js",
+    "forever": "./node_modules/.bin/forever"
   },
   "author": "Message Systems",
   "dependencies": {
     "body-parser": "1.9.0",
     "express": "4.9.5",
     "express-bearer-token": "^2.1.0",
-    "express-cluster": "0.0.2"
+    "express-cluster": "0.0.2",
+    "forever": "^0.15.1"
   }
 }
