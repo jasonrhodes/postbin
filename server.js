@@ -1,7 +1,9 @@
 var express = require('express')
   , cluster = require('express-cluster')
   , bodyParser = require('body-parser')
-  , bearerToken = require('express-bearer-token');
+  , bearerToken = require('express-bearer-token')
+  , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || 4000
+  , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
 cluster(function() {
   var app = express();
@@ -28,19 +30,11 @@ cluster(function() {
     res.status(failed ? 500 : 200).send({});
   });
 
-  app.all('/status/:statusCode*', function (req, res) {
+  app.all('/status/:statusCode*', authTimeout, function (req, res) {
     res.status(req.params.statusCode).send({});
   });
 
-  app.all('/auth/:authCode*', function (req, res) {
-    var authed = req.headers['x-messagesystems-webhook-token'] === req.params.authCode;
-    if (!authed) {
-      console.error('bad auth: ' + req.headers['x-messagesystems-webhook-token']);
-    }
-    res.status(authed ? 200 : 401).send({});
-  });
-
-  app.all('/logged/:statusCode*', function (req, res) {
+  app.all('/logged/:statusCode*', authTimeout, function (req, res) {
     var body = req.body
       , authTimeout = req.query.authTimeout;
     if (Array.isArray(body)) {
@@ -50,16 +44,15 @@ cluster(function() {
     }
     console.log(JSON.stringify(req.headers));
 
-    if (authTimeout) {
-      var token = req.token;
-      console.log('token', token);
-      if(!token || new Date().getTime() - token > authTimeout) {
-        res.status(401).send({
-          error: 'bad token'
-        });
-      }
-    }
     res.status(req.params.statusCode).send({});
+  });
+
+  app.all('/auth/:authCode*', function (req, res) {
+    var authed = req.headers['x-messagesystems-webhook-token'] === req.params.authCode;
+    if (!authed) {
+      console.error('bad auth: ' + req.headers['x-messagesystems-webhook-token']);
+    }
+    res.status(authed ? 200 : 401).send({});
   });
 
   app.all('/headers', function (req, res) {
@@ -117,7 +110,37 @@ cluster(function() {
     });
   });
 
-  app.listen(3000, function () {
-    console.log('Express server listening on port 3000');
+  app.listen(port, function () {
+    console.log('Express server listening on port ' + port);
   });
-}, { count: 1 });
+}, { count: spawnCount });
+
+
+function getLogger(req) {
+  return function() {
+    if (req.url.match(/^\/logged\//)) {
+      console.log.apply(console, arguments);
+    }
+  }
+}
+
+function authTimeout(req, res, next) {
+  var timeout = req.query.authTimeout
+    , token = req.token
+    , log = getLogger(req);
+  
+  if (!timeout) {
+    return next();
+  }
+
+  var token = req.token;
+  log('token', token);
+  if(!token || new Date().getTime() - token > timeout) {
+    res.status(401).send({
+      error: 'invalid or expired token: ' + token
+    });
+    return;
+  }
+  
+  next();
+}
