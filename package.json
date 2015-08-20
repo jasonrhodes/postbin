@@ -5,9 +5,9 @@
   "main": "server.js",
   "scripts": {
     "test": "grunt test",
-    "start": "./node_modules/.bin/forever start ./server.js",
-    "stop": "./node_modules/.bin/forever stop ./server.js",
-    "forever": "./node_modules/.bin/forever"
+    "start": "forever start -o /var/log/postbin.log -e /var/log/postbin.error.log ./server.js",
+    "stop": "forever stop ./server.js",
+    "forever": "forever"
   },
   "author": "Message Systems",
   "dependencies": {
