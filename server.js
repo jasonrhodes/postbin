@@ -2,6 +2,7 @@ var express = require('express')
   , cluster = require('express-cluster')
   , bodyParser = require('body-parser')
   , bearerToken = require('express-bearer-token')
+  , _ = require('lodash')
   , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || 4000
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
@@ -36,12 +37,14 @@ cluster(function() {
   app.all('/logged/:statusCode*', authTimeout, function (req, res) {
     var body = req.body;
 
+    console.log('\n' + timestamp() + '\nLOGGED REQUEST: ' + req.url);
+
     if (Array.isArray(body)) {
-      console.log("got an array of length: " + body.length);
+      console.log("Body is an array of length", body.length);
     } else {
-      console.log("got an object: " + body);
+      console.log("Body is an object:\n" + JSON.stringify(body, null, 2));
     }
-    console.log('headers:\n', JSON.stringify(req.headers));
+    console.log('Headers:\n' + JSON.stringify(req.headers, null, 2));
 
     if (req.token) {
       console.log('Bearer token:', req.token);
@@ -76,23 +79,22 @@ cluster(function() {
 
   app.post('/token', function (req, res) {
 
-    console.log(new Date(), 'token endpoint called', req.body);
+    console.log('\n' + timestamp() + '\nTOKEN REQUEST: ' + req.url);
+    console.log('Body:\n' + JSON.stringify(req.body, null, 2));
     
     switch (req.body.grant_type) {
       case 'client_credentials':
-        var expires_in = req.query.expires_in
-          , token_type = req.query.token_type
-          , refresh_token = req.query.refresh_token;
+        var response = req.body;
+        if (_.isUndefined(response.access_token)) {
+          response.access_token = new Date().getTime().toString();
+        }
 
-        res.status(200).send({
-          access_token: req.body.exact_token || new Date().getTime().toString(),
-          refresh_token: refresh_token,
-          expires_in: expires_in,
-          token_type: token_type
-        });
+        console.log('Valid token generated: ' + response.access_token);
+        res.status(200).send(response);
         break;
 
       default:
+        console.log('Invalid grant_type in token request body: ' + req.body.grant_type);
         res.status(400).send({
           error: 'invalid grant type'
         });
@@ -126,4 +128,10 @@ function authTimeout(req, res, next) {
   }
   
   next();
+}
+
+
+function timestamp() {
+  var d = new Date();
+  return d.toTimeString().split(' ').shift() + ' ' + d.toDateString();
 }

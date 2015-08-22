@@ -15,6 +15,7 @@
     "express": "4.9.5",
     "express-bearer-token": "^2.1.0",
     "express-cluster": "0.0.2",
-    "forever": "^0.15.1"
+    "forever": "^0.15.1",
+    "lodash": "3.10.1"
   }
 }
