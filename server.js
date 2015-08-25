@@ -73,15 +73,12 @@ cluster(function() {
   });
 
   app.post('/token', logHeader, delayResponse, function (req, res) {
-
-    console.log('Body:\n' + JSON.stringify(req.body, null, 2));
     
     switch (req.body.grant_type) {
       case 'client_credentials':
-        var response = req.body;
-        if (_.isUndefined(response.access_token)) {
-          response.access_token = new Date().getTime().toString();
-        }
+        var response = _.pick(req.body, 'expires_in', 'refresh_token');
+        response.access_token = new Date().getTime().toString();
+
 
         console.log('Valid token generated: ' + response.access_token);
         res.status(200).send(response);
@@ -93,6 +90,8 @@ cluster(function() {
           error: 'invalid grant type'
         });
     }
+
+    console.log('Body:\n' + JSON.stringify(req.body, null, 2));
   });
 
   app.listen(port, function () {
@@ -115,7 +114,15 @@ function authTimeout(req, res, next) {
     return next();
   }
 
-  if(!token || elapsed > timeout) {
+  if (!token) {
+    console.log('No token included in request, responding with 400');
+    res.status(400).send({
+      error: 'no access_token'
+    });
+    return;
+  }
+
+  if (elapsed > timeout) {
     console.log('Invalid or expired token %s, responding with 401', token);
     res.status(401).send({
       error: 'invalid or expired token: ' + token
@@ -123,10 +130,7 @@ function authTimeout(req, res, next) {
     return;
   }
 
-  if (token) {
-    console.log('%s ms remaining before token %s expires', (timeout - elapsed), token);  
-  }
-  
+  console.log('%s ms remaining before token %s expires', (timeout - elapsed), token);  
   next();
 }
 
