@@ -3,6 +3,7 @@ var express = require('express')
   , bodyParser = require('body-parser')
   , bearerToken = require('express-bearer-token')
   , _ = require('lodash')
+  , crypto = require('crypto')
   , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || 4000
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
@@ -34,10 +35,8 @@ cluster(function() {
     res.status(req.params.statusCode).send({});
   });
 
-  app.all('/logged/:statusCode*', authTimeout, function (req, res) {
+  app.all('/logged/:statusCode*', logHeader, delayResponse, authTimeout, function (req, res) {
     var body = req.body;
-
-    console.log('\n' + timestamp() + '\nLOGGED REQUEST: ' + req.url);
 
     if (Array.isArray(body)) {
       console.log("Body is an array of length", body.length);
@@ -77,9 +76,8 @@ cluster(function() {
     }, req.params.delayTime);
   });
 
-  app.post('/token', function (req, res) {
+  app.post('/token', logHeader, delayResponse, function (req, res) {
 
-    console.log('\n' + timestamp() + '\nTOKEN REQUEST: ' + req.url);
     console.log('Body:\n' + JSON.stringify(req.body, null, 2));
     
     switch (req.body.grant_type) {
@@ -130,8 +128,57 @@ function authTimeout(req, res, next) {
   next();
 }
 
+/**
+ * Middleware to add a styled header to a
+ * block of logs, use this as the first middleware
+ * on a route that includes logging
+ */
+function logHeader(req, res, next) {
+  req.hash = md5(req.url + req.ip).substr(0, 6);
+  console.log('\n' + timestamp() + ' | ' + req.hash + ' | ' + req.ip);
+  console.log(req.url);
+  next();
+}
 
+/**
+ * Middleware for delaying a response,
+ * can accept ?delay=500 for 500ms or
+ * ?delay=500-1500 for random ms delay 
+ * between 500 and 1500 ms
+ * 
+ */
+function delayResponse(req, res, next) {
+  var delay = req.query.delay;  
+  if (!delay) {
+    return next();
+  }
+  var ms, range = delay.split('-');
+  if (range.length === 1) {
+    ms = delay;
+  } else {
+    ms = _.random.apply(_, range);
+  }
+  console.log('Delay for ' + ms + 'ms');
+  setTimeout(next, ms);
+}
+
+/**
+ * Timestamp convenience method
+ * @return {[type]} [description]
+ */
 function timestamp() {
   var d = new Date();
   return d.toTimeString().split(' ').shift() + ' ' + d.toDateString();
 }
+
+/**
+ * Return an md5 hash
+ * @param  {String} value String to hash
+ * @return {String}       Hashed value
+ */
+function md5(value) {
+  var md5sum = crypto.createHash('md5');
+  md5sum.update(value);
+  return md5sum.digest('hex');
+}
+
