@@ -114,8 +114,8 @@ function authTimeout(req, res, next) {
     return next();
   }
 
-  if (req.headers['x-messagesystems-batch-id']) {
-    console.log('Batch ID:', req.headers['x-messagesystems-batch-id']);
+  if (!_.isUndefined(req.headers['x-messagesystems-batch-id'])) {
+    console.log('x-messagesystems-batch-id:', req.headers['x-messagesystems-batch-id']);
   }
 
   if (!token) {
