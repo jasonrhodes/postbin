@@ -43,11 +43,7 @@ cluster(function() {
     } else {
       console.log("Body is an object:\n" + JSON.stringify(body, null, 2));
     }
-    console.log('Headers:\n' + JSON.stringify(req.headers, null, 2));
-
-    if (req.token) {
-      console.log('Bearer token:', req.token);
-    }
+    console.log('Headers: ' + JSON.stringify(req.headers));
 
     res.status(req.params.statusCode).send({});
   });
