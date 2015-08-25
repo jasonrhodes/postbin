@@ -91,7 +91,7 @@ cluster(function() {
         });
     }
 
-    console.log('Body:\n' + JSON.stringify(req.body, null, 2));
+    console.log('Body: ' + JSON.stringify(req.body));
   });
 
   app.listen(port, function () {
@@ -112,6 +112,10 @@ function authTimeout(req, res, next) {
   
   if (!timeout) {
     return next();
+  }
+
+  if (req.headers['x-messagesystems-batch-id']) {
+    console.log('Batch ID:', req.headers['x-messagesystems-batch-id']);
   }
 
   if (!token) {
