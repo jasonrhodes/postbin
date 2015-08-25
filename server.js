@@ -31,7 +31,7 @@ cluster(function() {
     res.status(failed ? 500 : 200).send({});
   });
 
-  app.all('/status/:statusCode*', authTimeout, function (req, res) {
+  app.all('/status/:statusCode*', delayResponse, authTimeout, function (req, res) {
     res.status(req.params.statusCode).send({});
   });
 
@@ -108,17 +108,23 @@ cluster(function() {
  */
 function authTimeout(req, res, next) {
   var timeout = req.query.authTimeout
-    , token = req.token;
+    , token = req.token
+    , elapsed = new Date().getTime() - token;
   
   if (!timeout) {
     return next();
   }
 
-  if(!token || new Date().getTime() - token > timeout) {
+  if(!token || elapsed > timeout) {
+    console.log('Invalid or expired token %s, responding with 401', token);
     res.status(401).send({
       error: 'invalid or expired token: ' + token
     });
     return;
+  }
+
+  if (token) {
+    console.log('%s ms remaining before token %s expires', (timeout - elapsed), token);  
   }
   
   next();
@@ -131,8 +137,7 @@ function authTimeout(req, res, next) {
  */
 function logHeader(req, res, next) {
   req.hash = md5(req.url + req.ip).substr(0, 6);
-  console.log('\n' + timestamp() + ' | ' + req.hash + ' | ' + req.ip);
-  console.log(req.url);
+  console.log('\n' + timestamp() + ' | ' + req.hash + ' | ' + req.ip + ' | ' + req.url);
   next();
 }
 
