@@ -31,22 +31,11 @@ cluster(function() {
     res.status(failed ? 500 : 200).send({});
   });
 
-  app.all('/status/:statusCode*', delayResponse, authTimeout, function (req, res) {
+  app.all('/status/:statusCode*', delayResponse, function (req, res) {
     res.status(req.params.statusCode).send({});
   });
 
-  app.all('/logged/:statusCode*', logHeader, delayResponse, authTimeout, function (req, res) {
-    var body = req.body;
-
-    if (Array.isArray(body)) {
-      console.log("Body is an array of length", body.length);
-    } else {
-      console.log("Body is an object:\n" + JSON.stringify(body, null, 2));
-    }
-    console.log('Headers: ' + JSON.stringify(req.headers));
-
-    res.status(req.params.statusCode).send({});
-  });
+  app.all('/logged/:statusCode*', logHeader, delayResponse, loggedEndpoint);
 
   app.all('/auth/:authCode*', function (req, res) {
     var authed = req.headers['x-messagesystems-webhook-token'] === req.params.authCode;
@@ -72,33 +61,67 @@ cluster(function() {
     }, req.params.delayTime);
   });
 
-  app.post('/token', logHeader, delayResponse, function (req, res) {
-    
-    switch (req.body.grant_type) {
-      case 'client_credentials':
-        var response = _.pick(req.body, 'expires_in', 'refresh_token');
-        response.access_token = new Date().getTime().toString();
+  app.all('/logged', logHeader, delayResponse, wildcard, authTimeout, loggedEndpoint);
 
-
-        console.log('Valid token generated: ' + response.access_token);
-        res.status(200).send(response);
-        break;
-
-      default:
-        console.log('Invalid grant_type in token request body: ' + req.body.grant_type);
-        res.status(400).send({
-          error: 'invalid grant type'
-        });
-    }
-
-    console.log('Body: ' + JSON.stringify(req.body));
-  });
+  app.post('/token', logHeader, delayResponse, wildcard, tokenEndpoint);
 
   app.listen(port, function () {
     console.log('Express server listening on port ' + port);
   });
 }, { count: spawnCount });
 
+
+
+
+// Endpoint functions
+
+/**
+ * Logs the body and headers.
+ * @param req
+ * @param res
+ */
+function loggedEndpoint (req, res) {
+  var body = req.body;
+
+  console.log('Headers: ' + JSON.stringify(req.headers));
+  if (Array.isArray(body)) {
+    console.log("Body is an array of length", body.length);
+  } else {
+    console.log("Body is an object:\n" + JSON.stringify(body));
+  }
+
+  res.status(req.params.statusCode || 200).send({});
+}
+
+/**
+ * Sends an access_token back.
+ *
+ * @param req
+ * @param res
+ */
+function tokenEndpoint (req, res) {
+  switch (req.body.grant_type) {
+    case 'client_credentials':
+      var response = _.pick(req.body, 'expires_in', 'refresh_token');
+      response.access_token = new Date().getTime().toString();
+
+      console.log('Valid token generated: ' + response.access_token);
+      res.status(200).send(response);
+      break;
+
+    default:
+      console.log('Invalid grant_type in token request body: ' + req.body.grant_type);
+      res.status(400).send({
+        error: 'invalid grant type'
+      });
+  }
+
+  console.log('Body: ' + JSON.stringify(req.body));
+}
+
+
+
+// Middleware functions
 
 /**
  * Middleware for checking timestamp token
@@ -135,6 +158,46 @@ function authTimeout(req, res, next) {
   }
 
   console.log('%s ms remaining before token %s expires', (timeout - elapsed), token);  
+  next();
+}
+
+/**
+ * Sets a random response code, given a list of response codes and weights.
+ * e.g. badResponses="{\"400\":0.1,\"401\":0.25}"
+ *
+ * @param req
+ * @param res
+ * @param next
+ * @returns {*}
+ */
+function wildcard(req, res, next) {
+var random = Math.random()
+  , badResponses
+  , statusCode;
+
+  try {
+    badResponses = JSON.parse(req.query.badResponses);
+  } catch (e) {
+    next();
+  }
+
+  if (!badResponses) {
+    return next();
+  }
+
+  _.reduce(badResponses, function(totalPercentage, percentage, code) {
+    totalPercentage += percentage;
+    if (!statusCode && random <= totalPercentage) {
+      statusCode = code;
+    }
+    return totalPercentage;
+  }, 0);
+
+  if (statusCode) {
+    res.status(statusCode).send();
+    return;
+  }
+
   next();
 }
 
