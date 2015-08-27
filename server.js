@@ -194,6 +194,7 @@ var random = Math.random()
   }, 0);
 
   if (statusCode) {
+    console.log('Bad response womp womp, responding with %s', statusCode);
     res.status(statusCode).send();
     return;
   }
