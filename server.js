@@ -172,11 +172,15 @@ function authTimeout(req, res, next) {
  */
 function wildcard(req, res, next) {
 var random = Math.random()
-  , badResponses
+  , badResponses = {}
   , statusCode;
 
   try {
-    badResponses = JSON.parse(req.query.badResponses);
+    var codes = req.query.badResponses.split(',');
+    codes.forEach(function(item) {
+      var c = item.split(':');
+      badResponses[c[0]] = parseFloat(c[1]);
+    });
   } catch (e) {
     next();
   }
