@@ -182,6 +182,7 @@ var random = Math.random()
       badResponses[c[0]] = parseFloat(c[1]);
     });
   } catch (e) {
+    console.log('could not parse badResponses: ' + req.query.badResponses);
     next();
   }
 
