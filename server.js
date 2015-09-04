@@ -8,7 +8,8 @@ var express = require('express')
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
 cluster(function() {
-  var app = express();
+  var app = express()
+    , formParser = bodyParser.urlencoded({ extended: false });
 
   app.use(bodyParser.json({limit: '50mb', strict:false}));
   app.use(bearerToken());
@@ -63,7 +64,7 @@ cluster(function() {
 
   app.all('/logged', logHeader, delayResponse, wildcard, authTimeout, loggedEndpoint);
 
-  app.post('/token', logHeader, delayResponse, wildcard, tokenEndpoint);
+  app.post('/token', logHeader, formParser, delayResponse, wildcard, tokenEndpoint);
 
   app.listen(port, function () {
     console.log('Express server listening on port ' + port);
@@ -99,7 +100,15 @@ function loggedEndpoint (req, res) {
  * @param req
  * @param res
  */
-function tokenEndpoint (req, res) {
+function tokenEndpoint(req, res) {
+
+  var contentType = req.headers['content-type'];
+
+  if (contentType !== 'application/x-www-form-urlencoded') {
+    console.log('Invalid content type of ' + contentType + ', responding with 415');
+    return res.status(415).send('Please submit data in "x-www-form-urlencoded" format only');
+  }
+
   switch (req.body.grant_type) {
     case 'client_credentials':
       var response = _.pick(req.body, 'expires_in', 'refresh_token');
@@ -174,6 +183,10 @@ function wildcard(req, res, next) {
 var random = Math.random()
   , badResponses = {}
   , statusCode;
+
+  if (!req.query.badResponses) {
+    return next();
+  }
 
   try {
     var codes = req.query.badResponses.split(',');
