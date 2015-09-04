@@ -109,7 +109,7 @@ function tokenEndpoint(req, res) {
 
   var contentType = req.headers['content-type'];
 
-  if (contentType !== 'application/x-www-form-urlencoded') {
+  if (!contentType.match(/application\/x-www-form-urlencoded/)) {
     console.log('Invalid content type of ' + contentType + ', responding with 415');
     return res.status(415).send('Please submit data in "x-www-form-urlencoded" format only');
   }
