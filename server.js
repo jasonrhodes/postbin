@@ -8,11 +8,13 @@ var express = require('express')
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
 cluster(function() {
-  var app = express()
-    , formParser = bodyParser.urlencoded({ extended: false });
+  var app = express();
 
-  app.use(bodyParser.json({limit: '50mb', strict:false}));
+  app.use('/token', bodyParser.urlencoded({ extended: false }));
+  app.post('/token', logHeader, delayResponse, wildcard, tokenEndpoint);
+
   app.use(bearerToken());
+  app.use(bodyParser.json({ limit: '50mb', strict: false }));
 
   app.all('/', function (req, res) {
     var delay = req.headers['x-delay'] || null;
@@ -64,8 +66,11 @@ cluster(function() {
 
   app.all('/logged', logHeader, delayResponse, wildcard, authTimeout, loggedEndpoint);
 
-  app.post('/token', logHeader, formParser, delayResponse, wildcard, tokenEndpoint);
-
+  app.use(function(err, req, res, next) {
+    console.error(err.stack);
+    res.status(500).send('Something broke!');
+  });
+  
   app.listen(port, function () {
     console.log('Express server listening on port ' + port);
   });
