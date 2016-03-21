@@ -5,7 +5,7 @@
   "main": "server.js",
   "scripts": {
     "test": "grunt test",
-    "start": "forever start -o /var/log/postbin.log -e /var/log/postbin.error.log ./server.js",
+    "start": "node server.js",
     "stop": "forever stop ./server.js",
     "forever": "forever"
   },
