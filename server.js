@@ -4,7 +4,7 @@ var express = require('express')
   , bearerToken = require('express-bearer-token')
   , _ = require('lodash')
   , crypto = require('crypto')
-  , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || 4000
+  , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || process.env.PORT || 4000
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
 cluster(function() {
@@ -70,7 +70,7 @@ cluster(function() {
     console.error(err.stack);
     res.status(500).send('Something broke!');
   });
-  
+
   app.listen(port, function () {
     console.log('Express server listening on port ' + port);
   });
@@ -146,7 +146,7 @@ function authTimeout(req, res, next) {
   var timeout = req.query.authTimeout
     , token = req.token
     , elapsed = new Date().getTime() - token;
-  
+
   if (!timeout) {
     return next();
   }
@@ -171,7 +171,7 @@ function authTimeout(req, res, next) {
     return;
   }
 
-  console.log('%s ms remaining before token %s expires', (timeout - elapsed), token);  
+  console.log('%s ms remaining before token %s expires', (timeout - elapsed), token);
   next();
 }
 
@@ -239,12 +239,12 @@ function logHeader(req, res, next) {
 /**
  * Middleware for delaying a response,
  * can accept ?delay=500 for 500ms or
- * ?delay=500-1500 for random ms delay 
+ * ?delay=500-1500 for random ms delay
  * between 500 and 1500 ms
- * 
+ *
  */
 function delayResponse(req, res, next) {
-  var delay = req.query.delay;  
+  var delay = req.query.delay;
   if (!delay) {
     return next();
   }
@@ -277,4 +277,3 @@ function md5(value) {
   md5sum.update(value);
   return md5sum.digest('hex');
 }
-
