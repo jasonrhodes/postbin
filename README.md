@@ -2,11 +2,7 @@
 
 ## Group Installation
 
-You will need NodeJS installed to use this project. On CentOS, you can install NodeJS, along with the Node package manager (NPM), with the following command:
-
-`sudo yum install msys-nodejs --enablerepo=messagesystems`
-
-Once you've installed NodeJS and NPM successfully, install the postbin's dependencies by changing to the postbin directory and running `npm install`.
+You will need NodeJS installed to use this project. Once you've installed NodeJS and NPM successfully, install the postbin's dependencies by changing to the postbin directory and running `npm install`.
 
 To launch the server in your terminal, as for example to validate that it will run successfully, simply run `node server.js` while in the postbin directory.
 
