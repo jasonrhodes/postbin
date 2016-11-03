@@ -4,17 +4,7 @@
 
 You will need NodeJS installed to use this project. Once you've installed NodeJS and NPM successfully, install the postbin's dependencies by changing to the postbin directory and running `npm install`.
 
-To launch the server in your terminal, as for example to validate that it will run successfully, simply run `node server.js` while in the postbin directory.
-
-An easy method of running the postbin as a service is to install [Forever](https://github.com/nodejitsu/forever), a Node-based service monitor:
-
-`sudo npm install -g forever`
-
-(The `-g` option to `npm install` causes the specified package to be installed globally.)
-
-Once you've installed Forever, you can start the postbin as a service by changing to the postbin directory and running
-
-`forever start server.js`.
+To run, use `npm start`, or to keep it running in the background, use `npm run forever:start` and `npm run forever:stop` to stop later.
 
 ## Group Endpoints
 
