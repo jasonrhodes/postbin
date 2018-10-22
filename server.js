@@ -4,7 +4,6 @@ var express = require('express')
   , bearerToken = require('express-bearer-token')
   , _ = require('lodash')
   , crypto = require('crypto')
-  , https = require('https')
   , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || process.env.PORT || 4000
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
@@ -86,15 +85,10 @@ cluster(function() {
     console.error(err.stack);
     res.status(500).send('Something broke!');
   });
-
-
-  https.createServer({
-    requestCert: true,
-    rejectUnauthorized: false
-  }, app).listen(port);
-  // app.listen(port, function () {
-  //   console.log('Express server listening on port ' + port);
-  // });
+  
+  app.listen(port, function () {
+    console.log('Express server listening on port ' + port);
+  });
 }, { count: spawnCount });
 
 
