@@ -48,21 +48,6 @@ cluster(function() {
     res.status(authed ? 200 : 401).send({});
   });
 
-  app.all('/mtls', function (req, res) {
-
-    console.log(JSON.stringify(req.connection));
-
-    const cert = req.connection.getPeerCertificate();
-
-    if(cert) {
-      log.info(req.body);
-      res.send(`Hello ${cert.subject.CN}, your certificate was issued by ${cert.issuer.CN}!`);
-    } else {
-      res.status(401)
-        .send(`Sorry, but you need to provide a client certificate to continue.`);
-    }
-  });
-
   app.all('/slow/:averageTime*', function (req, res) {
     var time = Math.floor(Math.random() * req.params.averageTime * 2);
     var msg = 'Waited ' + time + 'ms';
