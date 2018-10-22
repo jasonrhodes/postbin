@@ -50,7 +50,7 @@ cluster(function() {
 
   app.all('/mtls', function (req, res) {
 
-    console.log(JSON.stringify(req));
+    console.log(JSON.stringify(req.connection));
 
     const cert = req.connection.getPeerCertificate();
 
@@ -85,7 +85,7 @@ cluster(function() {
     console.error(err.stack);
     res.status(500).send('Something broke!');
   });
-  
+
   app.listen(port, function () {
     console.log('Express server listening on port ' + port);
   });
