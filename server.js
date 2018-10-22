@@ -4,6 +4,7 @@ var express = require('express')
   , bearerToken = require('express-bearer-token')
   , _ = require('lodash')
   , crypto = require('crypto')
+  , https = require('https')
   , port = process.env.POSTBIN_TOKEN_PORT || process.env.POSTBIN_PORT || process.env.PORT || 4000
   , spawnCount = process.env.POSTBIN_SPAWN_COUNT || 1;
 
@@ -49,6 +50,9 @@ cluster(function() {
   });
 
   app.all('/mtls', function (req, res) {
+
+    console.log(JSON.stringify(req));
+
     const cert = req.connection.getPeerCertificate();
 
     if(cert) {
@@ -83,9 +87,14 @@ cluster(function() {
     res.status(500).send('Something broke!');
   });
 
-  app.listen(port, function () {
-    console.log('Express server listening on port ' + port);
-  });
+
+  https.createServer({
+    requestCert: true,
+    rejectUnauthorized: false
+  }, app).listen(port);
+  // app.listen(port, function () {
+  //   console.log('Express server listening on port ' + port);
+  // });
 }, { count: spawnCount });
 
 
